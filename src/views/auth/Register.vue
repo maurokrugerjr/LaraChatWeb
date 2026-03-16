@@ -1,44 +1,47 @@
 <template>
     <div class="min-h-screen flex items-center justify-center bg-gray-50">
         <div class="w-full max-w-md bg-white rounded-2xl shadow-sm p-8">
-            <h1 class="text-2xl font-semibold text-gray-900 mb-6">Create account</h1>
+            <h1 class="text-2xl font-semibold text-gray-900 mb-6">Criar conta</h1>
 
             <form @submit.prevent="handleSubmit" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                     <input
-                        v-model="form.name"
+                        v-model="form.nome"
                         type="text"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p v-if="errors.nome" class="mt-1 text-sm text-red-600">{{ errors.nome }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
                     <input
                         v-model="form.email"
                         type="email"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
                     <input
-                        v-model="form.password"
+                        v-model="form.senha"
                         type="password"
                         required
                         minlength="8"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p v-if="errors.senha" class="mt-1 text-sm text-red-600">{{ errors.senha }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar senha</label>
                     <input
-                        v-model="form.password_confirmation"
+                        v-model="form.senha_confirmation"
                         type="password"
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -52,13 +55,13 @@
                     :disabled="loading"
                     class="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition"
                 >
-                    {{ loading ? 'Creating account...' : 'Register' }}
+                    {{ loading ? 'Criando conta...' : 'Registrar' }}
                 </button>
             </form>
 
             <p class="mt-4 text-sm text-center text-gray-600">
-                Already have an account?
-                <RouterLink to="/login" class="text-indigo-600 hover:underline">Sign in</RouterLink>
+                Já tem uma conta?
+                <RouterLink to="/login" class="text-indigo-600 hover:underline">Entrar</RouterLink>
             </p>
         </div>
     </div>
@@ -73,26 +76,31 @@ const auth = useAuthStore()
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
+const errors = reactive({})
 
 const form = reactive({
-    name: '',
+    nome: '',
     email: '',
-    password: '',
-    password_confirmation: '',
+    senha: '',
+    senha_confirmation: '',
 })
 
 async function handleSubmit() {
     loading.value = true
     error.value = ''
+    Object.keys(errors).forEach(k => delete errors[k])
+
     try {
-        await auth.register(form.name, form.email, form.password, form.password_confirmation)
+        await auth.register(form.nome, form.email, form.senha, form.senha_confirmation)
         router.push('/dashboard')
     } catch (e) {
-        const errors = e.response?.data?.errors
-        if (errors) {
-            error.value = Object.values(errors).flat().join(' ')
+        const fieldErrors = e.response?.data?.errors
+        if (fieldErrors) {
+            Object.assign(errors, Object.fromEntries(
+                Object.entries(fieldErrors).map(([k, v]) => [k, v[0]])
+            ))
         } else {
-            error.value = e.response?.data?.message || 'Failed to create account.'
+            error.value = e.response?.data?.message || 'Erro ao criar conta.'
         }
     } finally {
         loading.value = false
